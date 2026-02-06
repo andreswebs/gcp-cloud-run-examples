@@ -1,8 +1,7 @@
 module "service" {
-  source     = "../../modules/cloudrun-service"
-  project_id = var.project
-  region     = var.region
-  name       = "example-api"
+  source = "../../modules/cloudrun"
+  region = var.region
+  name   = "example-api"
 
   labels = {
     service = "example-api"

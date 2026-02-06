@@ -1,5 +1,5 @@
 resource "google_cloud_run_v2_service" "unmanaged" {
-  count = length(var.containers) > 0 && !var.is_managed_revision ? 1 : 0
+  count = var.type == "SERVICE" && !var.is_managed_revision && length(var.containers) > 0 ? 1 : 0
 
   depends_on = [google_secret_manager_secret_iam_member.this]
 
@@ -15,7 +15,7 @@ resource "google_cloud_run_v2_service" "unmanaged" {
   launch_stage         = var.launch_stage
   location             = var.region
   name                 = var.name
-  project              = var.project_id
+  project              = local.project_id
 
   template {
     execution_environment = (

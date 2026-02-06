@@ -9,5 +9,7 @@ locals {
 
   service_account_roles = distinct(compact(concat(var.service_account_default_roles, var.service_account_config.roles)))
 
-  service = var.is_managed_revision ? try(google_cloud_run_v2_service.managed[0], null) : try(google_cloud_run_v2_service.unmanaged[0], null)
+  service = var.type == "SERVICE" ? var.is_managed_revision ? try(google_cloud_run_v2_service.managed[0], null) : try(google_cloud_run_v2_service.unmanaged[0], null) : null
+
+  job = var.type == "JOB" ? var.is_managed_revision ? try(google_cloud_run_v2_job.managed[0], null) : try(google_cloud_run_v2_job.unmanaged[0], null) : null
 }

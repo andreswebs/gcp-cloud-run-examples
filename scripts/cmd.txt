@@ -18,3 +18,5 @@ docker push "${IMAGE_URI}"
 
 docker tag "${IMAGE_URI}" "${IMAGE_URI}:3"
 docker push "${IMAGE_URI}:3"
+
+docker run -it --rm "${IMAGE_URI}"

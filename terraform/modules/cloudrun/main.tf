@@ -1,10 +1,9 @@
-resource "google_cloud_run_v2_service_iam_binding" "this" {
-  for_each = var.iam_bindings
-  project  = local.service.project
-  location = local.service.location
-  name     = local.service.name
-  role     = each.key
-  members  = each.value
+data "google_project" "this" {
+  project_id = var.project_id
+}
+
+locals {
+  project_id = data.google_project.this.project_id
 }
 
 resource "google_tags_location_tag_binding" "this" {

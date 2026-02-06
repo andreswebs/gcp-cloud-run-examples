@@ -96,6 +96,7 @@ variable "iam_bindings" {
   description = "IAM bindings for Cloud Run service in {ROLE => [MEMBERS]} format."
   type        = map(list(string))
   default     = {}
+  nullable    = false
 }
 
 variable "is_managed_revision" {
@@ -103,6 +104,22 @@ variable "is_managed_revision" {
   type        = bool
   nullable    = false
   default     = true
+}
+
+variable "job_config" {
+  description = "Cloud Run Job specific configuration options."
+  type = object({
+    annotations = optional(map(string), null)
+    max_retries = optional(number)
+    task_count  = optional(number)
+    timeout     = optional(string)
+  })
+  default  = {}
+  nullable = false
+  validation {
+    condition     = var.job_config.timeout == null ? true : endswith(var.job_config.timeout, "s")
+    error_message = "Timeout should follow format of number with up to nine fractional digits, ending with 's'. Example: '3.5s'."
+  }
 }
 
 variable "labels" {
@@ -134,8 +151,9 @@ variable "name" {
 }
 
 variable "project_id" {
-  description = "Project id used for all resources."
+  description = "Project id used for all resources. Defaults to the current project."
   type        = string
+  default     = null
 }
 
 variable "region" {
@@ -212,7 +230,7 @@ variable "service_account_default_roles" {
 }
 
 variable "service_config" {
-  description = "Cloud Run service specific configuration options."
+  description = "Cloud Run Service specific configuration options."
   type = object({
     annotations                = optional(map(string), null)
     client                     = optional(string, null)
@@ -251,6 +269,18 @@ variable "tag_bindings" {
   type        = map(string)
   nullable    = false
   default     = {}
+}
+
+variable "type" {
+  description = "Type of Cloud Run resource to deploy: JOB or SERVICE."
+  # description = "Type of Cloud Run resource to deploy: JOB, SERVICE or WORKERPOOL." ## TODO - WORKERPOOL will be supported in the future
+  type    = string
+  default = "SERVICE"
+  validation {
+    condition     = contains(["JOB", "WORKERPOOL", "SERVICE"], var.type)
+    error_message = "Allowed values for `var.type` are: `JOB`, `SERVICE`."
+    # error_message = "Allowed values for `var.type` are: `JOB`, `SERVICE`, `WORKERPOOL`"
+  }
 }
 
 variable "volumes" {
