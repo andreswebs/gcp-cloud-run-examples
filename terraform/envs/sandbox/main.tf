@@ -20,7 +20,7 @@ module "service" {
   containers = [
     {
       name        = "example-api"
-      image       = var.image_uri
+      image       = var.service_image_uri
       description = "An example .NET web api to test Datadog configuration"
 
       resources = {
@@ -173,6 +173,23 @@ module "service" {
         medium     = "MEMORY"
         size_limit = "512Mi"
       }
+    },
+  ]
+
+}
+
+module "job" {
+  source = "../../modules/cloudrun"
+  region = var.region
+  name   = "example-inspect"
+
+  type = "JOB"
+
+  containers = [
+    {
+      name        = "inspect"
+      image       = var.job_image_uri
+      description = "Inspect the Cloud Run Job environment"
     },
   ]
 

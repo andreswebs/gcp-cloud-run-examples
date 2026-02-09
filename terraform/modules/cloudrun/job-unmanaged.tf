@@ -1,5 +1,5 @@
 resource "google_cloud_run_v2_job" "unmanaged" {
-  count = var.type == "JOB" && var.is_managed_revision ? 1 : 0
+  count = var.type == "JOB" && !var.is_managed_revision && length(var.containers) > 0 ? 1 : 0
 
   depends_on = [google_secret_manager_secret_iam_member.this]
 

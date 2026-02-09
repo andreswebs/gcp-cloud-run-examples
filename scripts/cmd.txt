@@ -20,3 +20,7 @@ docker tag "${IMAGE_URI}" "${IMAGE_URI}:3"
 docker push "${IMAGE_URI}:3"
 
 docker run -it --rm "${IMAGE_URI}"
+
+gcloud run jobs execute example-inspect \
+    --region "${REGION}" \
+    --wait
