@@ -1,0 +1,60 @@
+# OpenAPI spec for dotnet-api-firebase (API A) — Firebase / Identity Platform JWT.
+#
+# When used with Google Cloud API Gateway, the x-google-* extensions tell
+# the gateway how to validate incoming JWTs and where to forward requests.
+#
+# Replace <FIREBASE_PROJECT_ID> and <CLOUD_RUN_URL> with real values.
+openapi: 3.2.0
+info:
+  title: dotnet-api-firebase (POC)
+  description: |
+    API A — protected by Firebase / Google Identity Platform JWTs.
+    Deployed behind Google Cloud API Gateway with backend authentication.
+  version: 0.1.0
+
+x-google-backend:
+  address: https://<CLOUD_RUN_URL>
+  jwt_audience: https://<CLOUD_RUN_URL>
+
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Health check (no auth)
+      security: []
+      responses:
+        "200":
+          description: Healthy
+
+  /:
+    get:
+      operationId: getRoot
+      summary: Service info (no auth)
+      security: []
+      responses:
+        "200":
+          description: OK
+
+  /api/whoami:
+    get:
+      operationId: getWhoami
+      summary: Returns caller identity from Firebase JWT claims
+      security:
+        - firebase_jwt: []
+      responses:
+        "200":
+          description: Caller identity
+        "401":
+          description: Missing or invalid token
+
+components:
+  securitySchemes:
+    firebase_jwt:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          scopes: {}
+      x-google-issuer: https://securetoken.google.com/<FIREBASE_PROJECT_ID>
+      x-google-jwks_uri: https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com
+      x-google-audiences: <FIREBASE_PROJECT_ID>

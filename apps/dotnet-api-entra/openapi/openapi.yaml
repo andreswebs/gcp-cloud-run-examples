@@ -1,0 +1,57 @@
+# OpenAPI spec for dotnet-api-entra (API B) — Entra / Azure AD JWT.
+#
+# When used with Google Cloud API Gateway, the x-google-* extensions tell
+# the gateway how to validate incoming JWTs and where to forward requests.
+#
+# Replace <TENANT_ID>, <CLIENT_ID>, and <CLOUD_RUN_URL> with real values.
+openapi: 3.0.0
+info:
+  title: dotnet-api-entra (POC)
+  description: |
+    API B — protected by Microsoft Entra ID (Azure AD) JWTs.
+    Deployed behind Google Cloud API Gateway with backend authentication.
+  version: 0.1.0
+
+x-google-backend:
+  address: https://<CLOUD_RUN_URL>
+  jwt_audience: https://<CLOUD_RUN_URL>
+
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Health check (no auth)
+      security: []
+      responses:
+        "200":
+          description: Healthy
+
+  /:
+    get:
+      operationId: getRoot
+      summary: Service info (no auth)
+      security: []
+      responses:
+        "200":
+          description: OK
+
+  /api/whoami:
+    get:
+      operationId: getWhoami
+      summary: Returns caller identity from Entra JWT claims
+      security:
+        - entra_jwt: []
+      responses:
+        "200":
+          description: Caller identity
+        "401":
+          description: Missing or invalid token
+
+securityDefinitions:
+  entra_jwt:
+    authorizationUrl: ""
+    flow: implicit
+    type: oauth2
+    x-google-issuer: https://login.microsoftonline.com/<TENANT_ID>/v2.0
+    x-google-jwks_uri: https://login.microsoftonline.com/<TENANT_ID>/discovery/v2.0/keys
+    x-google-audiences: <CLIENT_ID>

@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "google-developer-knowledge": {
+      "url": "https://developerknowledge.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${GCP_MCP_API_KEY}"
+      }
+    },
+    "terraform": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--interactive",
+        "--rm",
+        "hashicorp/terraform-mcp-server:0.4.0"
+      ]
+    }
+  }
+}

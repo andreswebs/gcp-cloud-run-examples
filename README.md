@@ -1,6 +1,4 @@
-# example-api
-
-An example web API in C#.
+# GCP Cloud Run Examples
 
 ## Authors
 

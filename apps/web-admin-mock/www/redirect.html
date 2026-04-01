@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirect</title>
+  </head>
+  <body>
+    <p>Processing authentication...</p>
+    <script src="js/msal-redirect-bridge.min.js"></script>
+    <script>
+      msalRedirectBridge
+        .broadcastResponseToMainFrame()
+        .catch(function (error) {
+          // No auth response in URL — likely a post-logout redirect; close the popup
+          console.error("Error broadcasting response to main frame:", error);
+          window.close();
+        });
+    </script>
+  </body>
+</html>

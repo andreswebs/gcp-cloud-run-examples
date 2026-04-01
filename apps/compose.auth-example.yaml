@@ -1,0 +1,104 @@
+---
+networks:
+  backend: {}
+
+services:
+  dotnet-api-firebase:
+    build:
+      context: ./dotnet-api-firebase
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      GCP__ProjectId: ${GOOGLE_CLOUD_PROJECT:-}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      Firebase__ProjectId: ${FIREBASE_PROJECT_ID:-}
+      Cors__Origins__0: http://localhost:3090
+      Cors__Origins__1: http://localhost:3091
+    networks:
+      - backend
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--output-document=/dev/null",
+          "http://localhost:8080/healthz",
+        ]
+    stop_grace_period: 30s
+
+  dotnet-api-entra:
+    build:
+      context: ./dotnet-api-entra
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      GCP__ProjectId: ${GOOGLE_CLOUD_PROJECT:-}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      AzureAd__TenantId: ${AZURE_AD_TENANT_ID:-}
+      AzureAd__ClientId: ${AZURE_AD_CLIENT_ID:-}
+      Cors__Origins__0: http://localhost:3090
+      Cors__Origins__1: http://localhost:3091
+    networks:
+      - backend
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--output-document=/dev/null",
+          "http://localhost:8080/healthz",
+        ]
+    stop_grace_period: 30s
+
+  web-admin-mock:
+    build:
+      context: ./web-admin-mock
+      dockerfile: Dockerfile
+    ports:
+      - "3090:8080"
+    environment:
+      APP_API_BASE_URL: http://localhost:8081
+      APP_MSAL_AUTHORITY: https://login.microsoftonline.com/${AZURE_AD_TENANT_ID:-}
+      APP_MSAL_CLIENT_ID: ${AZURE_AD_CLIENT_ID:-}
+      APP_API_SCOPES: ${AZURE_AD_API_SCOPES:-}
+    networks:
+      - backend
+    depends_on:
+      dotnet-api-entra:
+        condition: service_healthy
+
+  web-app-mock:
+    build:
+      context: ./web-app-mock
+      dockerfile: Dockerfile
+    ports:
+      - "3091:8080"
+    environment:
+      APP_API_BASE_URL: http://localhost:8080
+      APP_FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
+      APP_FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-}
+      APP_FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      APP_FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET:-}
+      APP_FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID:-}
+      APP_FIREBASE_APP_ID: ${FIREBASE_APP_ID:-}
+    networks:
+      - backend
+    depends_on:
+      dotnet-api-firebase:
+        condition: service_healthy

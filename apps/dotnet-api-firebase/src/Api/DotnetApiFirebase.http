@@ -1,0 +1,21 @@
+@DotnetApiFirebase_HostAddress = http://localhost:8080
+
+GET {{DotnetApiFirebase_HostAddress}}/
+Accept: application/json
+
+###
+
+GET {{DotnetApiFirebase_HostAddress}}/healthz
+Accept: application/json
+
+###
+
+# @token = paste Firebase ID token
+# GET {{DotnetApiFirebase_HostAddress}}/api/whoami
+# Authorization: Bearer {{token}}
+
+# Or simulate API Gateway client JWT forwarding:
+# GET {{DotnetApiFirebase_HostAddress}}/api/whoami
+# X-Forwarded-Authorization: Bearer {{token}}
+
+###

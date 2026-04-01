@@ -1,0 +1,21 @@
+@DotnetApiEntra_HostAddress = http://localhost:8081
+
+GET {{DotnetApiEntra_HostAddress}}/
+Accept: application/json
+
+###
+
+GET {{DotnetApiEntra_HostAddress}}/healthz
+Accept: application/json
+
+###
+
+# @token = paste Entra access token
+# GET {{DotnetApiEntra_HostAddress}}/api/whoami
+# Authorization: Bearer {{token}}
+
+# Or:
+# GET {{DotnetApiEntra_HostAddress}}/api/whoami
+# X-Forwarded-Authorization: Bearer {{token}}
+
+###

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="css/pico.min.css" />
+    <title>Admin Portal POC (Entra / MSAL)</title>
+    <script src="js/config.js"></script>
+    <script src="js/msal-browser.min.js"></script>
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@5/lib/msal-browser.min.js"></script>
+    -->
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Admin Portal POC</h1>
+        <p>MSAL + Entra API</p>
+      </header>
+      <section>
+        <button type="button" id="btn-sign-in">Sign in (popup)</button>
+        <button type="button" id="btn-sign-out">Sign out</button>
+      </section>
+      <section>
+        <button type="button" id="btn-health">GET /healthz</button>
+        <button type="button" id="btn-whoami">GET /api/whoami</button>
+      </section>
+      <section>
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script src="js/auth-msal.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

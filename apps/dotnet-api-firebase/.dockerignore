@@ -1,0 +1,27 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# IDE
+**/.idea/
+**/.vscode/
+**/*.user
+**/*.suo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# GitHub Actions (not needed in image)
+.github/
+
+# Local development
+*.local
+*.env.local
+
