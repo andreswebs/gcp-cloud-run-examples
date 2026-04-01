@@ -47,6 +47,22 @@ paths:
         "401":
           description: Missing or invalid token
 
+  /api/internal/connectivity:
+    get:
+      operationId: getInternalConnectivity
+      summary: Diagnostic endpoint that calls the downstream entra API internally
+      description: |
+        Tests internal service-to-service connectivity by calling the configured
+        downstream endpoint. When INTERNAL_AUTH_ENABLED is true, attaches a GCP
+        OIDC identity token to the internal request.
+      security:
+        - firebase_jwt: []
+      responses:
+        "200":
+          description: Diagnostic response with target, status, latency, and downstream body
+        "401":
+          description: Missing or invalid Firebase JWT
+
 components:
   securitySchemes:
     firebase_jwt:

@@ -42,5 +42,14 @@
         useForwarded ? "X-Forwarded-Authorization" : "Authorization",
       );
     },
+
+    getConnectivity(token) {
+      return requestJson(
+        env("API_BASE_URL", "http://localhost:8080"),
+        "/api/internal/connectivity",
+        token,
+        "Authorization",
+      );
+    },
   };
 })();

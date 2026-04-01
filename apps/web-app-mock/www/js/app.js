@@ -54,5 +54,11 @@
         return window.AppApi.getWhoami(token, true);
       });
     });
+    document.getElementById("btn-connectivity")?.addEventListener("click", () => {
+      safeRun("/api/internal/connectivity", async () => {
+        const token = await window.AppAuth.getIdToken();
+        return window.AppApi.getConnectivity(token);
+      });
+    });
   });
 })();

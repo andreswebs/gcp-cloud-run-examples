@@ -25,12 +25,15 @@ if (string.IsNullOrWhiteSpace(firebaseProjectId) || string.Equals(firebaseProjec
         "Firebase ProjectId is missing or unknown | Set Firebase:ProjectId or GCP project metadata | JwtBearer authority may be invalid");
 }
 
+var internalApiBaseUrl = builder.Configuration["INTERNAL_API_BASE_URL"];
+var customersEndpoint = builder.Configuration["CUSTOMERS_ENDPOINT"] ?? "/api/whoami";
 var internalAuthEnabled = string.Equals(
     builder.Configuration["INTERNAL_AUTH_ENABLED"], "true", StringComparison.OrdinalIgnoreCase);
 var internalOidcAudience = builder.Configuration["INTERNAL_OIDC_AUDIENCE"];
 
-var authBuilder = builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddHttpClient("InternalApi");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = $"https://securetoken.google.com/{firebaseProjectId}";
@@ -57,33 +60,7 @@ var authBuilder = builder.Services
         };
     });
 
-if (internalAuthEnabled)
-{
-    authBuilder.AddJwtBearer("GcpOidc", options =>
-    {
-        options.Authority = "https://accounts.google.com";
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = "https://accounts.google.com",
-            ValidateAudience = true,
-            ValidAudience = internalOidcAudience,
-            ValidateLifetime = true,
-        };
-    });
-}
-
-builder.Services.AddAuthorization(options =>
-{
-    if (internalAuthEnabled)
-    {
-        var defaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
-            JwtBearerDefaults.AuthenticationScheme, "GcpOidc")
-            .RequireAuthenticatedUser()
-            .Build();
-        options.DefaultPolicy = defaultPolicy;
-    }
-});
+builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
@@ -211,6 +188,72 @@ app.MapGet("/api/whoami", (ClaimsPrincipal user) =>
         });
     })
     .RequireAuthorization();
+
+app.MapGet("/api/internal/connectivity", async (
+    IHttpClientFactory httpClientFactory,
+    ILogger<Program> logger) =>
+{
+    var targetUrl = $"{internalApiBaseUrl}{customersEndpoint}";
+    var authAttached = false;
+
+    using var client = httpClientFactory.CreateClient("InternalApi");
+    using var request = new HttpRequestMessage(HttpMethod.Get, targetUrl);
+
+    if (internalAuthEnabled)
+    {
+        var token = await GcpOidcTokenHelper.GetIdentityTokenAsync(internalOidcAudience, logger);
+        if (token != null)
+        {
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            authAttached = true;
+        }
+    }
+
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    try
+    {
+        using var response = await client.SendAsync(request);
+        stopwatch.Stop();
+
+        var body = await response.Content.ReadAsStringAsync();
+        object? parsedBody = null;
+        try
+        {
+            parsedBody = System.Text.Json.JsonSerializer.Deserialize<object>(body);
+        }
+        catch
+        {
+            parsedBody = body;
+        }
+
+        return Results.Ok(new
+        {
+            target = targetUrl,
+            authAttached,
+            statusCode = (int)response.StatusCode,
+            latencyMs = stopwatch.ElapsedMilliseconds,
+            response = parsedBody,
+            error = (string?)null,
+        });
+    }
+    catch (Exception ex)
+    {
+        stopwatch.Stop();
+        logger.LogError(ex, "Internal connectivity test failed for {TargetUrl}", targetUrl);
+
+        return Results.Ok(new
+        {
+            target = targetUrl,
+            authAttached,
+            statusCode = (int?)null,
+            latencyMs = stopwatch.ElapsedMilliseconds,
+            response = (object?)null,
+            error = ex.Message,
+        });
+    }
+})
+.RequireAuthorization();
 
     app.Run();
 }

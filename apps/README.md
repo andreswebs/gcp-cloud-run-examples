@@ -37,28 +37,28 @@ When deployed behind a Google Cloud API Gateway, the gateway validates the clien
 
 ### Internal connectivity test
 
-The entra API has a diagnostic endpoint that calls the firebase API internally:
+The firebase API has a diagnostic endpoint that calls the entra API internally:
 
 ```mermaid
 sequenceDiagram
-    participant FE as web-admin-mock
-    participant Entra as dotnet-api-entra
+    participant FE as web-app-mock
     participant Firebase as dotnet-api-firebase
+    participant Entra as dotnet-api-entra
 
-    FE->>Entra: GET /api/internal/connectivity<br/>[Entra JWT]
-    Entra->>Entra: Fetch OIDC token from<br/>GCP metadata server
-    Entra->>Firebase: GET /api/whoami<br/>[GCP OIDC token]
-    Firebase-->>Entra: 200 OK (claims)
-    Entra-->>FE: Diagnostic response<br/>(target, status, latency, body)
+    FE->>Firebase: GET /api/internal/connectivity<br/>[Firebase JWT]
+    Firebase->>Firebase: Fetch OIDC token from<br/>GCP metadata server
+    Firebase->>Entra: GET /api/whoami<br/>[GCP OIDC token]
+    Entra-->>Firebase: 200 OK (claims)
+    Firebase-->>FE: Diagnostic response<br/>(target, status, latency, body)
 ```
 
 This validates:
 
-- **Network connectivity** -- the request reaches the firebase API through the configured route
+- **Network connectivity** -- the request reaches the entra API through the configured route
 - **DNS resolution** -- the internal hostname or load balancer address resolves correctly
 - **Load balancer routing** -- path-based routing delivers the request to the correct service
-- **GCP service identity** -- the entra API's service account can obtain an OIDC identity token from the metadata server
-- **Multi-scheme authentication** -- the firebase API accepts GCP OIDC tokens alongside Firebase JWTs
+- **GCP service identity** -- the firebase API's service account can obtain an OIDC identity token from the metadata server
+- **Multi-scheme authentication** -- the entra API accepts GCP OIDC tokens alongside Entra ID JWTs
 
 The connectivity endpoint returns a diagnostic response:
 
@@ -69,7 +69,7 @@ The connectivity endpoint returns a diagnostic response:
   "statusCode": 200,
   "latencyMs": 45,
   "response": {
-    "service": "dotnet-api-firebase",
+    "service": "dotnet-api-entra",
     "is_authenticated": true,
     "...": "..."
   },
@@ -79,15 +79,15 @@ The connectivity endpoint returns a diagnostic response:
 
 ### How internal auth works
 
-In Cloud Run, the entra API fetches an OIDC identity token from the GCP metadata server:
+In Cloud Run, the firebase API fetches an OIDC identity token from the GCP metadata server:
 
 ```txt
 GET http://metadata.google.internal/.../identity?audience={INTERNAL_OIDC_AUDIENCE}
 ```
 
-This returns a JWT signed by Google (`https://accounts.google.com`) containing the entra API's service account identity. The firebase API validates this token as a second authentication scheme alongside its existing Firebase JWT validation. Both schemes are accepted on all protected endpoints when `INTERNAL_AUTH_ENABLED=true`.
+This returns a JWT signed by Google (`https://accounts.google.com`) containing the firebase API's service account identity. The entra API validates this token as a second authentication scheme alongside its existing Entra ID JWT validation. Both schemes are accepted on all protected endpoints when `INTERNAL_AUTH_ENABLED=true`.
 
-A config toggle (`INTERNAL_AUTH_ENABLED`) controls this behavior. When `false`, the entra API does not attach a token and the firebase API only registers its Firebase auth scheme.
+A config toggle (`INTERNAL_AUTH_ENABLED`) controls this behavior. When `false`, the firebase API does not attach a token and the entra API only registers its Entra ID auth scheme.
 
 ## Running locally with Docker Compose
 
@@ -128,11 +128,11 @@ docker compose -f compose.auth-example.yaml up --build
 
 ### Testing the connectivity endpoint locally
 
-1. Open `http://localhost:3090` and sign in with Entra credentials
+1. Open `http://localhost:3091` and sign in with Firebase credentials
 2. Click **GET /api/internal/connectivity**
 3. The log panel displays the diagnostic response
 
-Locally, `INTERNAL_AUTH_ENABLED` is `false`, so the entra API does not attach an OIDC token to the internal call. Since the firebase API's `/api/whoami` requires authentication, the downstream response will be a `401`. This is expected -- it confirms that the network path works (the request reached the firebase API and a response came back). To get a `200` locally, change `CUSTOMERS_ENDPOINT` to `/healthz` in the compose file.
+Locally, `INTERNAL_AUTH_ENABLED` is `false`, so the firebase API does not attach an OIDC token to the internal call. Since the entra API's `/api/whoami` requires authentication, the downstream response will be a `401`. This is expected -- it confirms that the network path works (the request reached the entra API and a response came back). To get a `200` locally, change `CUSTOMERS_ENDPOINT` to `/healthz` in the compose file.
 
 ## Cloud Run configuration
 
@@ -140,26 +140,26 @@ Each application expects specific environment variables when deployed to Cloud R
 
 ### dotnet-api-entra
 
-| Variable                 | Description                                        | Example                                  |
-| ------------------------ | -------------------------------------------------- | ---------------------------------------- |
-| `AzureAd__TenantId`      | Entra ID tenant ID                                 | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`   |
-| `AzureAd__ClientId`      | Entra app registration client ID                   | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`   |
-| `Cors__Origins__0`       | First allowed CORS origin                          | `https://admin.example.com`              |
-| `INTERNAL_API_BASE_URL`  | Base URL of the internal load balancer             | `https://internal-api.example.internal`  |
-| `CUSTOMERS_ENDPOINT`     | Path to the downstream endpoint on the internal LB | `/customers/api/whoami`                  |
-| `INTERNAL_AUTH_ENABLED`  | Attach GCP OIDC token to internal calls            | `true`                                   |
-| `INTERNAL_OIDC_AUDIENCE` | OIDC audience to request from the metadata server  | Must match the value on the firebase API |
+| Variable                 | Description                               | Example                                  |
+| ------------------------ | ----------------------------------------- | ---------------------------------------- |
+| `AzureAd__TenantId`      | Entra ID tenant ID                        | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`   |
+| `AzureAd__ClientId`      | Entra app registration client ID          | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`   |
+| `Cors__Origins__0`       | First allowed CORS origin                 | `https://admin.example.com`              |
+| `INTERNAL_AUTH_ENABLED`  | Register GCP OIDC as a second auth scheme | `true`                                   |
+| `INTERNAL_OIDC_AUDIENCE` | Expected audience in GCP OIDC tokens      | Must match the value on the firebase API |
 
 ### dotnet-api-firebase
 
-| Variable                 | Description                                        | Example                               |
-| ------------------------ | -------------------------------------------------- | ------------------------------------- |
-| `Firebase__ProjectId`    | Firebase project ID (falls back to GCP project ID) | `my-project`                          |
-| `Cors__Origins__0`       | First allowed CORS origin                          | `https://app.example.com`             |
-| `INTERNAL_AUTH_ENABLED`  | Register GCP OIDC as a second auth scheme          | `true`                                |
-| `INTERNAL_OIDC_AUDIENCE` | Expected audience in GCP OIDC tokens               | Must match the value on the entra API |
+| Variable                 | Description                                        | Example                                 |
+| ------------------------ | -------------------------------------------------- | --------------------------------------- |
+| `Firebase__ProjectId`    | Firebase project ID (falls back to GCP project ID) | `my-project`                            |
+| `Cors__Origins__0`       | First allowed CORS origin                          | `https://app.example.com`               |
+| `INTERNAL_API_BASE_URL`  | Base URL of the internal load balancer             | `https://internal-api.example.internal` |
+| `CUSTOMERS_ENDPOINT`     | Path to the downstream endpoint on the internal LB | `/customers/api/whoami`                 |
+| `INTERNAL_AUTH_ENABLED`  | Attach GCP OIDC token to internal calls            | `true`                                  |
+| `INTERNAL_OIDC_AUDIENCE` | OIDC audience to request from the metadata server  | Must match the value on the entra API   |
 
-`INTERNAL_OIDC_AUDIENCE` must be identical on both services. It is the value the entra API requests when fetching its identity token, and the value the firebase API validates against. A typical choice is the internal load balancer URL or a custom audience string agreed upon between services.
+`INTERNAL_OIDC_AUDIENCE` must be identical on both services. It is the value the firebase API requests when fetching its identity token, and the value the entra API validates against. A typical choice is the internal load balancer URL or a custom audience string agreed upon between services.
 
 ### web-admin-mock
 
@@ -190,8 +190,8 @@ Each application expects specific environment variables when deployed to Cloud R
 | Firebase JWT authentication   | Customer app signs in via Firebase SDK, calls `/api/whoami` on firebase API                     |
 | API Gateway token forwarding  | Both APIs read tokens from `X-Forwarded-Authorization` when behind a gateway                    |
 | CORS configuration            | Frontends on different origins call APIs with appropriate CORS headers                          |
-| Internal network connectivity | Entra API calls firebase API through the internal LB; diagnostic response confirms reachability |
+| Internal network connectivity | Firebase API calls entra API through the internal LB; diagnostic response confirms reachability |
 | Internal DNS resolution       | The internal call uses the configured base URL, verifying DNS resolves to the correct target    |
-| GCP OIDC service identity     | Entra API obtains an identity token from the metadata server for service-to-service auth        |
-| Multi-scheme JWT validation   | Firebase API accepts both Firebase JWTs (external) and GCP OIDC tokens (internal)               |
+| GCP OIDC service identity     | Firebase API obtains an identity token from the metadata server for service-to-service auth     |
+| Multi-scheme JWT validation   | Entra API accepts both Entra ID JWTs (external) and GCP OIDC tokens (internal)                  |
 | Health checks and readiness   | All services expose `/healthz`; Docker Compose and Cloud Run use it for health probes           |

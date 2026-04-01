@@ -1,4 +1,4 @@
-namespace DotnetApiEntra.Helpers;
+namespace DotnetApiFirebase.Helpers;
 
 public static class GcpOidcTokenHelper
 {

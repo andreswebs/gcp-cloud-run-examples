@@ -1,10 +1,8 @@
 (function () {
   "use strict";
 
-  const logEl = () => document.getElementById("log");
-
   function log(line) {
-    const el = logEl();
+    const el = document.getElementById("log");
     if (el) {
       el.textContent += `${new Date().toISOString()} ${line}\n`;
     }
@@ -30,16 +28,16 @@
     document.getElementById("btn-health")?.addEventListener("click", () => {
       safeRun("/healthz", () => window.AdminApi.getHealth());
     });
-    document.getElementById("btn-whoami")?.addEventListener("click", () => {
-      safeRun("/api/whoami", async () => {
+    document.getElementById("btn-whoami-auth")?.addEventListener("click", () => {
+      safeRun("/api/whoami (Authorization)", async () => {
         const token = await window.AdminAuth.acquireApiAccessToken();
         return window.AdminApi.getWhoami(token, false);
       });
     });
-    document.getElementById("btn-connectivity")?.addEventListener("click", () => {
-      safeRun("/api/internal/connectivity", async () => {
+    document.getElementById("btn-whoami-forwarded")?.addEventListener("click", () => {
+      safeRun("/api/whoami (X-Forwarded-Authorization)", async () => {
         const token = await window.AdminAuth.acquireApiAccessToken();
-        return window.AdminApi.getConnectivity(token);
+        return window.AdminApi.getWhoami(token, true);
       });
     });
 

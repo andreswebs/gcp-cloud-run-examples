@@ -23,9 +23,13 @@
         <button type="button" id="btn-sign-out">Sign out</button>
       </section>
       <section>
-        <button type="button" id="btn-health">GET /healthz</button>
-        <button type="button" id="btn-whoami">GET /api/whoami</button>
-        <button type="button" id="btn-connectivity">GET /api/internal/connectivity</button>
+        <button type="button" id="btn-health">GET Entra API /healthz</button>
+        <button type="button" id="btn-whoami-auth">
+          GET /api/whoami (Authorization)
+        </button>
+        <button type="button" id="btn-whoami-forwarded">
+          GET /api/whoami (X-Forwarded-Authorization)
+        </button>
       </section>
       <section>
         <h2>Log</h2>
