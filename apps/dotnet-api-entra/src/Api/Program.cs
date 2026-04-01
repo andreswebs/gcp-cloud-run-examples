@@ -28,6 +28,14 @@ if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(clientId))
     clientId = "00000000-0000-0000-0000-000000000000";
 }
 
+var internalApiBaseUrl = builder.Configuration["INTERNAL_API_BASE_URL"];
+var customersEndpoint = builder.Configuration["CUSTOMERS_ENDPOINT"];
+var internalAuthEnabled = string.Equals(
+    builder.Configuration["INTERNAL_AUTH_ENABLED"], "true", StringComparison.OrdinalIgnoreCase);
+var internalOidcAudience = builder.Configuration["INTERNAL_OIDC_AUDIENCE"];
+
+builder.Services.AddHttpClient("InternalApi");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
@@ -181,6 +189,72 @@ app.MapGet("/api/whoami", (ClaimsPrincipal user) =>
         });
     })
     .RequireAuthorization();
+
+app.MapGet("/api/internal/connectivity", async (
+    IHttpClientFactory httpClientFactory,
+    ILogger<Program> logger) =>
+{
+    var targetUrl = $"{internalApiBaseUrl}{customersEndpoint}";
+    var authAttached = false;
+
+    using var client = httpClientFactory.CreateClient("InternalApi");
+    using var request = new HttpRequestMessage(HttpMethod.Get, targetUrl);
+
+    if (internalAuthEnabled)
+    {
+        var token = await GcpOidcTokenHelper.GetIdentityTokenAsync(internalOidcAudience, logger);
+        if (token != null)
+        {
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            authAttached = true;
+        }
+    }
+
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    try
+    {
+        using var response = await client.SendAsync(request);
+        stopwatch.Stop();
+
+        var body = await response.Content.ReadAsStringAsync();
+        object? parsedBody = null;
+        try
+        {
+            parsedBody = System.Text.Json.JsonSerializer.Deserialize<object>(body);
+        }
+        catch
+        {
+            parsedBody = body;
+        }
+
+        return Results.Ok(new
+        {
+            target = targetUrl,
+            authAttached,
+            statusCode = (int)response.StatusCode,
+            latencyMs = stopwatch.ElapsedMilliseconds,
+            response = parsedBody,
+            error = (string?)null,
+        });
+    }
+    catch (Exception ex)
+    {
+        stopwatch.Stop();
+        logger.LogError(ex, "Internal connectivity test failed for {TargetUrl}", targetUrl);
+
+        return Results.Ok(new
+        {
+            target = targetUrl,
+            authAttached,
+            statusCode = (int?)null,
+            latencyMs = stopwatch.ElapsedMilliseconds,
+            response = (object?)null,
+            error = ex.Message,
+        });
+    }
+})
+.RequireAuthorization();
 
     app.Run();
 }

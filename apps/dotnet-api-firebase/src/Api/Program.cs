@@ -25,33 +25,65 @@ if (string.IsNullOrWhiteSpace(firebaseProjectId) || string.Equals(firebaseProjec
         "Firebase ProjectId is missing or unknown | Set Firebase:ProjectId or GCP project metadata | JwtBearer authority may be invalid");
 }
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-{
-    options.Authority = $"https://securetoken.google.com/{firebaseProjectId}";
-    options.Audience = firebaseProjectId;
-    options.TokenValidationParameters = new TokenValidationParameters
+var internalAuthEnabled = string.Equals(
+    builder.Configuration["INTERNAL_AUTH_ENABLED"], "true", StringComparison.OrdinalIgnoreCase);
+var internalOidcAudience = builder.Configuration["INTERNAL_OIDC_AUDIENCE"];
+
+var authBuilder = builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = true,
-        ValidIssuer = $"https://securetoken.google.com/{firebaseProjectId}",
-        ValidateAudience = true,
-        ValidateLifetime = true,
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
+        options.Authority = $"https://securetoken.google.com/{firebaseProjectId}";
+        options.Audience = firebaseProjectId;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var fromForwarded = ForwardedClientJwtBearer.ReadClientJwtForJwtBearer(context.Request);
-            if (!string.IsNullOrEmpty(fromForwarded))
+            ValidateIssuer = true,
+            ValidIssuer = $"https://securetoken.google.com/{firebaseProjectId}",
+            ValidateAudience = true,
+            ValidateLifetime = true,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
             {
-                context.Token = fromForwarded;
-            }
+                var fromForwarded = ForwardedClientJwtBearer.ReadClientJwtForJwtBearer(context.Request);
+                if (!string.IsNullOrEmpty(fromForwarded))
+                {
+                    context.Token = fromForwarded;
+                }
 
-            return Task.CompletedTask;
-        },
-    };
+                return Task.CompletedTask;
+            },
+        };
+    });
+
+if (internalAuthEnabled)
+{
+    authBuilder.AddJwtBearer("GcpOidc", options =>
+    {
+        options.Authority = "https://accounts.google.com";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+            ValidateAudience = true,
+            ValidAudience = internalOidcAudience,
+            ValidateLifetime = true,
+        };
+    });
+}
+
+builder.Services.AddAuthorization(options =>
+{
+    if (internalAuthEnabled)
+    {
+        var defaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
+            JwtBearerDefaults.AuthenticationScheme, "GcpOidc")
+            .RequireAuthenticatedUser()
+            .Build();
+        options.DefaultPolicy = defaultPolicy;
+    }
 });
-
-builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {

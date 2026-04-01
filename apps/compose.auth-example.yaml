@@ -16,6 +16,7 @@ services:
       Firebase__ProjectId: ${FIREBASE_PROJECT_ID:-}
       Cors__Origins__0: http://localhost:3090
       Cors__Origins__1: http://localhost:3091
+      INTERNAL_AUTH_ENABLED: "false"
     networks:
       - backend
     healthcheck:
@@ -48,8 +49,14 @@ services:
       AzureAd__ClientId: ${AZURE_AD_CLIENT_ID:-}
       Cors__Origins__0: http://localhost:3090
       Cors__Origins__1: http://localhost:3091
+      INTERNAL_API_BASE_URL: http://dotnet-api-firebase:8080
+      CUSTOMERS_ENDPOINT: /api/whoami
+      INTERNAL_AUTH_ENABLED: "false"
     networks:
       - backend
+    depends_on:
+      dotnet-api-firebase:
+        condition: service_healthy
     healthcheck:
       interval: 10s
       timeout: 5s

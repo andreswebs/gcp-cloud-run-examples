@@ -36,6 +36,12 @@
         return window.AdminApi.getWhoami(token, false);
       });
     });
+    document.getElementById("btn-connectivity")?.addEventListener("click", () => {
+      safeRun("/api/internal/connectivity", async () => {
+        const token = await window.AdminAuth.acquireApiAccessToken();
+        return window.AdminApi.getConnectivity(token);
+      });
+    });
 
     log("Set APP_ env vars (or edit js/config.js) with Entra app ids and scopes. API must allow CORS for this origin.");
   });
