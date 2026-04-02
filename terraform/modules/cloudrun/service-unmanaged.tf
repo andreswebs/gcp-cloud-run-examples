@@ -59,15 +59,9 @@ resource "google_cloud_run_v2_service" "unmanaged" {
       content {
         egress = var.revision_config.vpc_access.egress
         network_interfaces {
-          subnetwork = var.revision_config.vpc_access.subnet == null ? null : lookup(
-            local.ctx.subnets, var.revision_config.vpc_access.subnet,
-            var.revision_config.vpc_access.subnet
-          )
-          network = var.revision_config.vpc_access.network == null ? null : lookup(
-            local.ctx.networks, var.revision_config.vpc_access.network,
-            var.revision_config.vpc_access.network
-          )
-          tags = var.revision_config.vpc_access.tags
+          subnetwork = var.revision_config.vpc_access.subnet == null ? null : var.revision_config.vpc_access.subnet
+          network    = var.revision_config.vpc_access.network == null ? null : var.revision_config.vpc_access.network
+          tags       = var.revision_config.vpc_access.tags
         }
       }
     }

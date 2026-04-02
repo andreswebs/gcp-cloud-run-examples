@@ -92,10 +92,13 @@ variable "encryption_key" {
   default     = null
 }
 
-variable "iam_bindings" {
-  description = "IAM bindings for Cloud Run service in {ROLE => [MEMBERS]} format."
-  type        = map(list(string))
-  default     = {}
+variable "iam_members" {
+  type = list(object({
+    role    = string
+    members = list(string)
+  }))
+  description = "Optional IAM bindings: list of { role, members } to grant on the Cloud Run resource"
+  default     = []
   nullable    = false
 }
 
@@ -262,13 +265,6 @@ variable "service_config" {
     INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER.
     EOF
   }
-}
-
-variable "tag_bindings" {
-  description = "Tag bindings for this service, in key => value format."
-  type        = map(string)
-  nullable    = false
-  default     = {}
 }
 
 variable "type" {

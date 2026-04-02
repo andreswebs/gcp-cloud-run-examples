@@ -1,8 +1,8 @@
-resource "google_cloud_run_v2_service_iam_binding" "this" {
-  for_each = var.type == "SERVICE" ? var.iam_bindings : {}
+resource "google_cloud_run_v2_service_iam_member" "this" {
+  for_each = var.type == "SERVICE" ? local.iam_flattened : {}
   project  = local.service.project
   location = local.service.location
   name     = local.service.name
-  role     = each.key
-  members  = each.value
+  role     = each.value.role
+  member   = each.value.member
 }
