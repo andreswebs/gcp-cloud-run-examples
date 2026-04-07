@@ -4,6 +4,8 @@
   async function requestJson(baseUrl, path, bearerToken, headerName) {
     const url = `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
     const headers = { Accept: "application/json" };
+    const apiKey = env("GATEWAY_X_API_KEY");
+    if (apiKey) headers["x-api-key"] = apiKey;
     if (bearerToken) {
       const value = `Bearer ${bearerToken}`;
       if (headerName === "X-Forwarded-Authorization") {
