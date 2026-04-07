@@ -26,7 +26,7 @@
     });
 
     document.getElementById("btn-health")?.addEventListener("click", () => {
-      safeRun("/healthz", () => window.AdminApi.getHealth());
+      safeRun("/health", () => window.AdminApi.getHealth());
     });
     document.getElementById("btn-whoami-auth")?.addEventListener("click", () => {
       safeRun("/api/whoami (Authorization)", async () => {

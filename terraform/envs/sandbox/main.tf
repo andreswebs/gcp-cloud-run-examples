@@ -32,7 +32,7 @@ module "service" {
 
       liveness_probe = {
         http_get = {
-          path = "/healthz"
+          path = "/health"
         }
       }
 

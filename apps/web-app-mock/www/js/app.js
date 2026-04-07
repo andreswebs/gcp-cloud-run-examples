@@ -40,7 +40,7 @@
     });
 
     document.getElementById("btn-health")?.addEventListener("click", () => {
-      safeRun("/healthz", () => window.AppApi.getHealth());
+      safeRun("/health", () => window.AppApi.getHealth());
     });
     document.getElementById("btn-whoami-auth")?.addEventListener("click", () => {
       safeRun("/api/whoami (Authorization)", async () => {

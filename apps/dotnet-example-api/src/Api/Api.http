@@ -5,7 +5,7 @@ Accept: application/json
 
 ###
 
-GET {{Api_HostAddress}}/healthz
+GET {{Api_HostAddress}}/health
 Accept: application/json
 
 ###

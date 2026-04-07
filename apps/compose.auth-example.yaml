@@ -36,7 +36,7 @@ services:
           "--quiet",
           "--tries=1",
           "--output-document=/dev/null",
-          "http://localhost:8080/healthz",
+          "http://localhost:8080/health",
         ]
     stop_grace_period: 30s
 
@@ -69,7 +69,7 @@ services:
           "--quiet",
           "--tries=1",
           "--output-document=/dev/null",
-          "http://localhost:8080/healthz",
+          "http://localhost:8080/health",
         ]
     stop_grace_period: 30s
 

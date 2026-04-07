@@ -30,7 +30,7 @@ flowchart LR
 Both APIs expose the same endpoints:
 
 - `GET /` -- service info (unauthenticated)
-- `GET /healthz` -- health check (unauthenticated)
+- `GET /health` -- health check (unauthenticated, configurable via `HEALTH_PATH`)
 - `GET /api/whoami` -- caller identity from JWT claims (authenticated)
 
 When deployed behind a Google Cloud API Gateway, the gateway validates the client JWT and forwards it to the backend via the `X-Forwarded-Authorization` header. Both APIs extract tokens from this header when present, falling back to the standard `Authorization` header.
@@ -132,7 +132,7 @@ docker compose -f compose.auth-example.yaml up --build
 2. Click **GET /api/internal/connectivity**
 3. The log panel displays the diagnostic response
 
-Locally, `INTERNAL_AUTH_ENABLED` is `false`, so the firebase API does not attach an OIDC token to the internal call. Since the entra API's `/api/whoami` requires authentication, the downstream response will be a `401`. This is expected -- it confirms that the network path works (the request reached the entra API and a response came back). To get a `200` locally, change `CUSTOMERS_ENDPOINT` to `/healthz` in the compose file.
+Locally, `INTERNAL_AUTH_ENABLED` is `false`, so the firebase API does not attach an OIDC token to the internal call. Since the entra API's `/api/whoami` requires authentication, the downstream response will be a `401`. This is expected -- it confirms that the network path works (the request reached the entra API and a response came back). To get a `200` locally, change `CUSTOMERS_ENDPOINT` to `/health` in the compose file.
 
 ## Cloud Run configuration
 
@@ -194,4 +194,4 @@ Each application expects specific environment variables when deployed to Cloud R
 | Internal DNS resolution       | The internal call uses the configured base URL, verifying DNS resolves to the correct target    |
 | GCP OIDC service identity     | Firebase API obtains an identity token from the metadata server for service-to-service auth     |
 | Multi-scheme JWT validation   | Entra API accepts both Entra ID JWTs (external) and GCP OIDC tokens (internal)                  |
-| Health checks and readiness   | All services expose `/healthz`; Docker Compose and Cloud Run use it for health probes           |
+| Health checks and readiness   | All services expose `/health` (configurable via `HEALTH_PATH`); Docker Compose and Cloud Run use it for health probes |

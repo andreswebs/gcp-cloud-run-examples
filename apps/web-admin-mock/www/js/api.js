@@ -4,7 +4,7 @@
   /**
    * Call APIs from the browser. Requires CORS on dotnet-api-* if origins differ.
    * @param {string} baseUrl
-   * @param {string} path e.g. /healthz or /api/whoami
+   * @param {string} path e.g. /health or /api/whoami
    * @param {string | null} bearerToken
    * @param {"Authorization" | "X-Forwarded-Authorization"} headerName simulate gateway forwarding
    */
@@ -40,7 +40,7 @@
     requestJson,
 
     getHealth() {
-      return requestJson(env("API_BASE_URL", "http://localhost:8081"), "/healthz", null, "Authorization");
+      return requestJson(env("API_BASE_URL", "http://localhost:8081"), "/health", null, "Authorization");
     },
 
     getWhoami(token, useForwarded) {

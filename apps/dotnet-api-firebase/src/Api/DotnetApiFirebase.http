@@ -5,7 +5,7 @@ Accept: application/json
 
 ###
 
-GET {{DotnetApiFirebase_HostAddress}}/healthz
+GET {{DotnetApiFirebase_HostAddress}}/health
 Accept: application/json
 
 ###

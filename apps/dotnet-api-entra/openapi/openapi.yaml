@@ -17,7 +17,7 @@ x-google-backend:
   jwt_audience: https://<CLOUD_RUN_URL>
 
 paths:
-  /healthz:
+  /health:
     get:
       operationId: getHealth
       summary: Health check (no auth)

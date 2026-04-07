@@ -33,7 +33,7 @@
     requestJson,
 
     getHealth() {
-      return requestJson(env("API_BASE_URL", "http://localhost:8080"), "/healthz", null, "Authorization");
+      return requestJson(env("API_BASE_URL", "http://localhost:8080"), "/health", null, "Authorization");
     },
 
     getWhoami(token, useForwarded) {

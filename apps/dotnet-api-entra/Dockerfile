@@ -5,26 +5,20 @@ WORKDIR /src
 
 COPY src/Api/DotnetApiEntra.csproj ./
 
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages <<EOT
-    dotnet restore DotnetApiEntra.csproj
-EOT
+RUN dotnet restore DotnetApiEntra.csproj
 
 COPY /src/Api/ ./
 
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages <<EOT
-    dotnet build DotnetApiEntra.csproj \
+RUN dotnet build DotnetApiEntra.csproj \
         --nologo \
         --no-restore \
         --configuration Release
-EOT
 
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages <<EOT
-    dotnet publish DotnetApiEntra.csproj \
+RUN dotnet publish DotnetApiEntra.csproj \
         --nologo \
         --no-build \
         --configuration Release \
         --output /publish
-EOT
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
@@ -73,5 +67,5 @@ COPY --from=build /publish/ /app/
 RUN chown --recursive "${APP_UID}:${APP_UID}" /app
 USER "${APP_UID}"
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --quiet --tries=1 --output-document=/dev/null http://localhost:8080/healthz || exit 1
+    CMD wget --quiet --tries=1 --output-document=/dev/null http://localhost:8080/health || exit 1
 ENTRYPOINT ["dotnet", "DotnetApiEntra.dll"]

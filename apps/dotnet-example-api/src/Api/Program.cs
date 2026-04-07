@@ -68,7 +68,9 @@ app.MapGet("/", (HttpContext context, ILogger<Program> logger) => {
     return response;
 });
 
-app.MapGet("/healthz", (ILogger<Program> logger) => {
+var healthPath = builder.Configuration["HEALTH_PATH"] ?? "/health";
+
+app.MapGet(healthPath, (ILogger<Program> logger) => {
     using var operation = Operation.Begin("Processing health check request");
 
     logger.LogInformation("Health check endpoint accessed");
